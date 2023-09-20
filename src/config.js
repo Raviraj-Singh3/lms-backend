@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import 'dotenv/config'
 
 const DB_URL =  process.env.MONGO_URL ||'mongodb://localhost:27017';
 

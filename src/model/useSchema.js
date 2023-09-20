@@ -2,13 +2,23 @@ import mongoose, { Schema } from "mongoose";
 
 const userSchema = new Schema({
     name: {
-        type: String
+        type: String,
+        required: true,
+        minLength: [5, "name should be minimun 5 character"],
+        trim: true,
+        
     },
     email: {
-        type: String
+        type: String,
+        required: true ,
+        unique: true,
+        lowercase: true,
+        unique: [true, "email already exists"]
+        
     },
     password: {
-        type: String
+        type: String,
+        select: false
     }
 },
 {
