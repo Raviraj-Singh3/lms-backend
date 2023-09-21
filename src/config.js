@@ -2,13 +2,15 @@ import mongoose from "mongoose";
 
 const DB_URL =  process.env.MONGO_URL ||'mongodb://localhost:27017';
 
+mongoose.set('strictQuery', false);
+
 const dbConnect = async () =>{
     try {
-        const connt = await mongoose.connect(DB_URL)
-        console.log(`conn::${connt.connection.host}`)
-        console.log("database connected")
+        const connt = await mongoose.connect(DB_URL);
+        console.log(`connected::${connt.connection.host}`);
     } catch (error) {
-        console.log(error)
+        console.log(error);
+        process.exit(1);
     }
     
 }
