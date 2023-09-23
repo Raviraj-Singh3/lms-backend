@@ -1,7 +1,8 @@
 import { userModel } from "../model/useSchema.js";
 import emailValidator from 'email-validator'
 import AppError from "../utils/error.util.js";
-
+import {v2 as cloudinary} from 'cloudinary';
+import fs from 'fs/promises';
 
     const cookieOptions = {
         maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
@@ -12,6 +13,8 @@ import AppError from "../utils/error.util.js";
 export const signup = async(req, res, next) => {
 
         const {name, email, password} = req.body;
+        console.log(req.body);
+        console.log(req.file);
 
         if(!name || !email || !password){
             return next( new AppError('All fields are required', 400));
@@ -45,7 +48,32 @@ export const signup = async(req, res, next) => {
         }
 
         //TODO: file upload
+        if(req.file) {
+            try {
+                const result = await cloudinary.uploader.upload(req.file.path, {
+                    folder: 'lms',
+                    width: 250,
+                    height: 250,
+                    gravity: 'faces',
+                    crop: 'fill'
+                });
+                console.log(result);
 
+                if(result){
+                    user.avatar.public_id = result.public_id;
+                    user.avatar.secure_url = result.secure_url;
+
+                    //remove file from server
+                    fs.rm(`uploads/${req.file.filename}`)
+
+                    
+                }
+
+            } catch (error) {
+                return next(new AppError(error || 'File not uploaded, please try again', 500))
+            }
+            
+        }
 
         await user.save();
 
@@ -97,7 +125,7 @@ export const signin = async(req, res, next) =>{
 
 }
 
-export const signout = (req, res) =>{
+export const signout = (req, res, next) =>{
 
     res.cookie('token', null, {
         secure: true,
@@ -111,7 +139,7 @@ export const signout = (req, res) =>{
     })
 };
 
-export const getProfile = async(req, res) => {
+export const getProfile = async(req, res, next) => {
 
     try {
 
