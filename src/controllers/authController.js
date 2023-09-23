@@ -13,8 +13,6 @@ import fs from 'fs/promises';
 export const signup = async(req, res, next) => {
 
         const {name, email, password} = req.body;
-        console.log(req.body);
-        console.log(req.file);
 
         if(!name || !email || !password){
             return next( new AppError('All fields are required', 400));
@@ -46,7 +44,7 @@ export const signup = async(req, res, next) => {
         if(!user) {
             return next(new AppError('User registration failed, please try again', 400))
         }
-
+        
         //TODO: file upload
         if(req.file) {
             try {
@@ -57,16 +55,13 @@ export const signup = async(req, res, next) => {
                     gravity: 'faces',
                     crop: 'fill'
                 });
-                console.log(result);
-
                 if(result){
                     user.avatar.public_id = result.public_id;
                     user.avatar.secure_url = result.secure_url;
 
-                    //remove file from server
+                    //remove file from local
                     fs.rm(`uploads/${req.file.filename}`)
 
-                    
                 }
 
             } catch (error) {
@@ -156,6 +151,44 @@ export const getProfile = async(req, res, next) => {
     catch (error) {
         return next(new AppError('Failed to fetch profile details', 500))
     }
-    
+}
+
+export const forgotPassword = async (req, res, next)=> {
+
+    const { email } = req.body;
+
+    if(!email){
+        return next(new AppError('Email is required', 400));
+    }
+
+    const user = await userModel.findOne({email});
+
+    if(!user) {
+        return next(new AppError('Email does not exist', 400));
+    }
+
+    const resetToken = await user.generatePasswordResetToken();
+
+    await user.save();
+
+    const resetPasswordURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    try {
+        await sendEmail(email, subject, message);
+
+        res.status(200).json({
+            success: true,
+            message: `Reset password token has been sent to ${email} successfully`
+        })
+    } catch (error) {
+        user.forgotPasswordExpiry = undefined;
+        user.forgotPasswordToken = undefined;
+
+        await user.save();
+        return next(new AppError(e.message, 500));
+    }
+}
+
+export const resetPassword = (req, res, next) => {
 
 }
